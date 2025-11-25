@@ -1,25 +1,12 @@
 {
   "name": "ecotrack-server",
   "version": "1.0.0",
-  "description": "EcoTrack Backend API for Sustainable Living Community",
   "main": "api/index.js",
-  "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
-  },
   "engines": {
     "node": "24.x"
   },
-  "keywords": ["ecotrack", "sustainability", "api"],
-  "author": "Your Name",
-  "license": "ISC",
   "dependencies": {
     "express": "^4.18.2",
-    "mongoose": "^8.0.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.2"
+    "cors": "^2.8.5"
   }
 }
