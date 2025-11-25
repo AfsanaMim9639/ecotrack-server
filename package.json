@@ -1,0 +1,23 @@
+{
+  "name": "ecotrack-server",
+  "version": "1.0.0",
+  "description": "EcoTrack Backend API",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "vercel-build": "echo 'Building for Vercel'"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
