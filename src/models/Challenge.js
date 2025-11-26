@@ -4,62 +4,79 @@ const challengeSchema = new mongoose.Schema({
   title: {
     type: String,
     required: [true, 'Challenge title is required'],
-    trim: true
-  },
-  category: {
-    type: String,
-    required: [true, 'Category is required'],
-    enum: [
-      'Energy Conservation',
-      'Water Conservation',
-      'Waste Reduction',
-      'Sustainable Transport',
-      'Green Living',
-      'Other'
-    ]
+    trim: true,
+    maxlength: [100, 'Title cannot exceed 100 characters']
   },
   description: {
     type: String,
     required: [true, 'Description is required'],
-    trim: true
+    trim: true,
+    maxlength: [500, 'Description cannot exceed 500 characters']
+  },
+  category: {
+    type: String,
+    required: [true, 'Category is required'],
+    enum: ['Energy', 'Water', 'Waste', 'Transportation', 'Food', 'Other'],
+    default: 'Other'
   },
   duration: {
     type: Number,
     required: [true, 'Duration is required'],
-    min: 1
+    min: [1, 'Duration must be at least 1 day']
   },
-  target: {
+  difficulty: {
     type: String,
-    required: [true, 'Target is required']
+    required: [true, 'Difficulty level is required'],
+    enum: ['Easy', 'Medium', 'Hard'],
+    default: 'Easy'
+  },
+  points: {
+    type: Number,
+    required: [true, 'Points are required'],
+    min: [0, 'Points cannot be negative'],
+    default: 10
   },
   participants: {
     type: Number,
-    default: 0
-  },
-  impactMetric: {
-    type: String,
-    required: [true, 'Impact metric is required']
-  },
-  createdBy: {
-    type: String,
-    default: 'admin@ecotrack.com'
-  },
-  startDate: {
-    type: String, // "2024-07-01" format
-    required: true
-  },
-  endDate: {
-    type: String, // "2024-07-31" format
-    required: true
+    default: 0,
+    min: [0, 'Participants cannot be negative']
   },
   imageUrl: {
     type: String,
-    default: 'https://example.com/image.jpg'
+    default: 'https://via.placeholder.com/400x300?text=Challenge'
+  },
+  createdBy: {
+    type: String,
+    default: 'Admin'
+  },
+  status: {
+    type: String,
+    enum: ['Active', 'Completed', 'Upcoming'],
+    default: 'Active'
+  },
+  startDate: {
+    type: Date,
+    default: Date.now
+  },
+  endDate: {
+    type: Date
   }
 }, {
   timestamps: true
 });
 
-challengeSchema.index({ category: 1 });
+// Add index for faster queries
+challengeSchema.index({ category: 1, status: 1 });
+challengeSchema.index({ createdAt: -1 });
 
-export default mongoose.model('Challenge', challengeSchema);
+// Virtual for calculating if challenge is expired
+challengeSchema.virtual('isExpired').get(function() {
+  if (this.endDate) {
+    return new Date() > this.endDate;
+  }
+  return false;
+});
+
+const Challenge = mongoose.model('Challenge', challengeSchema);
+
+export default Challenge;
