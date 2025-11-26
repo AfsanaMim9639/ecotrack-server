@@ -2,11 +2,12 @@
   "name": "ecotrack-server",
   "version": "1.0.0",
   "description": "EcoTrack Backend API",
-  "main": "src/app.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/app.js",
+    "vercel-build": "echo 'Building for Vercel'"
   },
   "keywords": ["eco", "sustainability", "challenges"],
   "author": "",
@@ -16,10 +17,12 @@
     "mongoose": "^8.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "express-validator": "^7.0.1",
-    "firebase-admin": "^12.0.0"
+    "express-validator": "^7.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.x"
   }
 }

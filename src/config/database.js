@@ -5,16 +5,27 @@ dotenv.config();
 
 const connectDB = async () => {
   try {
+    // Prevent multiple connections in serverless
+    if (mongoose.connections[0].readyState) {
+      console.log('📦 Using existing MongoDB connection');
+      return;
+    }
+
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      socketTimeoutMS: 45000, // Close sockets after 45s
     });
 
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
     console.log(`📊 Database Name: ${conn.connection.name}`);
+    
+    return conn;
   } catch (error) {
     console.error(`❌ Error connecting to MongoDB: ${error.message}`);
-    process.exit(1);
+    // Don't exit process in serverless environment
+    throw error;
   }
 };
 
