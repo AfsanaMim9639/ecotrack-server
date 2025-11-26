@@ -1,4 +1,3 @@
-// models/User.js
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
@@ -24,11 +23,31 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  level: {
+  totalChallengesJoined: {
     type: Number,
-    default: 1
+    default: 0
   },
-  lastLogin: {
+  totalChallengesCompleted: {
+    type: Number,
+    default: 0
+  },
+  currentStreak: {
+    type: Number,
+    default: 0
+  },
+  longestStreak: {
+    type: Number,
+    default: 0
+  },
+  rank: {
+    type: String,
+    enum: ['Beginner', 'Explorer', 'Champion', 'Legend', 'Master'],
+    default: 'Beginner'
+  },
+  badges: [{
+    type: String
+  }],
+  lastActive: {
     type: Date,
     default: Date.now
   }
@@ -36,4 +55,11 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-export default mongoose.model('User', userSchema);
+// Index for leaderboard queries
+userSchema.index({ totalPoints: -1 });
+userSchema.index({ totalChallengesCompleted: -1 });
+userSchema.index({ currentStreak: -1 });
+
+const User = mongoose.model('User', userSchema);
+
+export default User;

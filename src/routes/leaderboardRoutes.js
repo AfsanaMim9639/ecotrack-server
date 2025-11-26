@@ -1,10 +1,10 @@
 import express from 'express';
-import {
-  getLeaderboard,
-  getUserRank,
-  getTopPerformers
+import { 
+  getLeaderboard, 
+  getUserRank, 
+  getTopPerformers 
 } from '../controllers/leaderboardController.js';
-import { authenticateUser, optionalAuth } from '../middleware/auth.js';
+import { authenticateUser } from '../middleware/auth.js';
 
 const router = express.Router();
 

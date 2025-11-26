@@ -12,6 +12,7 @@ import eventsRoutes from './routes/eventsRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+//import leaderboardRoutes from './routes/leaderboardRoutes.js';
 
 // Load environment variables
 dotenv.config();
