@@ -13,6 +13,10 @@ const progressSchema = new mongoose.Schema({
   note: {
     type: String,
     maxlength: 200
+  },
+  description: {
+    type: String,
+    maxlength: 500
   }
 }, { _id: false });
 
@@ -26,15 +30,28 @@ const userChallengeSchema = new mongoose.Schema({
     type: String,
     required: [true, 'User email is required']
   },
+  userName: {
+    type: String
+  },
   challengeId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Challenge',
     required: [true, 'Challenge ID is required'],
     index: true
   },
+  // Challenge info snapshot (for quick access)
+  challengeTitle: {
+    type: String
+  },
+  challengeCategory: {
+    type: String
+  },
+  challengePoints: {
+    type: Number
+  },
   status: {
     type: String,
-    enum: ['active', 'completed', 'abandoned'],
+    enum: ['active', 'completed', 'abandoned', 'Active', 'Completed', 'Abandoned'],
     default: 'active'
   },
   progress: [progressSchema],
@@ -48,13 +65,40 @@ const userChallengeSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  startDate: {
+    type: Date,
+    default: Date.now
+  },
   completedDate: {
     type: Date
+  },
+  lastUpdated: {
+    type: Date,
+    default: Date.now
   },
   pointsEarned: {
     type: Number,
     default: 0
-  }
+  },
+  totalUpdates: {
+    type: Number,
+    default: 0
+  },
+  daysActive: {
+    type: Number,
+    default: 0
+  },
+  progressUpdates: [{
+    date: {
+      type: Date,
+      default: Date.now
+    },
+    description: {
+      type: String,
+      required: true
+    },
+    proofImage: String
+  }]
 }, {
   timestamps: true
 });

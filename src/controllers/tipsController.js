@@ -10,11 +10,12 @@ export const getAllTips = async (req, res) => {
     if (featured === 'true') filter.featured = true;
 
     const tips = await Tip.find(filter)
-      .sort({ createdAt: -1 })
+      .sort({ featured: -1, createdAt: -1 })
       .limit(parseInt(limit));
 
     res.status(200).json({
       success: true,
+      count: tips.length,
       data: tips
     });
   } catch (error) {
@@ -71,6 +72,59 @@ export const createTip = async (req, res) => {
   }
 };
 
+// Update tip
+export const updateTip = async (req, res) => {
+  try {
+    const tip = await Tip.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!tip) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tip not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: tip,
+      message: 'Tip updated successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Delete tip
+export const deleteTip = async (req, res) => {
+  try {
+    const tip = await Tip.findByIdAndDelete(req.params.id);
+
+    if (!tip) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tip not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Tip deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 // Like tip
 export const likeTip = async (req, res) => {
   try {
@@ -89,7 +143,8 @@ export const likeTip = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: tip
+      data: tip,
+      message: 'Tip liked successfully'
     });
   } catch (error) {
     res.status(500).json({

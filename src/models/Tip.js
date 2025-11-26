@@ -7,17 +7,31 @@ const tipSchema = new mongoose.Schema({
     trim: true,
     maxlength: [100, 'Title cannot exceed 100 characters']
   },
+  description: {
+    type: String,
+    required: [true, 'Tip description is required'],
+    trim: true,
+    maxlength: [500, 'Description cannot exceed 500 characters']
+  },
   content: {
     type: String,
-    required: [true, 'Tip content is required'],
     trim: true,
     maxlength: [500, 'Content cannot exceed 500 characters']
   },
   category: {
     type: String,
     required: [true, 'Category is required'],
-    enum: ['Energy', 'Water', 'Waste', 'Transportation', 'Food', 'Other'],
+    enum: ['Energy', 'Water', 'Waste', 'Transportation', 'Food', 'General', 'Other'],
     default: 'Other'
+  },
+  icon: {
+    type: String,
+    default: '💡'
+  },
+  impactLevel: {
+    type: String,
+    enum: ['Low', 'Medium', 'High'],
+    default: 'Medium'
   },
   author: {
     type: String,
@@ -36,6 +50,10 @@ const tipSchema = new mongoose.Schema({
   featured: {
     type: Boolean,
     default: false
+  },
+  order: {
+    type: Number,
+    default: 0
   },
   tags: [{
     type: String,

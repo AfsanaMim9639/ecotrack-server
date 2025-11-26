@@ -3,18 +3,18 @@ import {
   getAllTips,
   getTipById,
   createTip,
+  updateTip,
+  deleteTip,
   likeTip
 } from '../controllers/tipsController.js';
-import { authenticateUser, optionalAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Public routes
 router.get('/', getAllTips);
 router.get('/:id', getTipById);
-
-// Protected routes
-router.post('/', authenticateUser, createTip);
-router.post('/:id/like', optionalAuth, likeTip);
+router.post('/', createTip);
+router.put('/:id', updateTip);
+router.delete('/:id', deleteTip);
+router.post('/:id/like', likeTip);
 
 export default router;
