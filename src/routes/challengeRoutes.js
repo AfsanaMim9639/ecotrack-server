@@ -17,7 +17,7 @@ router.get('/:id', getChallengeById);
 
 // Protected routes (require authentication)
 router.post('/', authenticateUser, createChallenge);
-router.put('/:id', authenticateUser, updateChallenge);
+router.patch('/:id', authenticateUser, updateChallenge);
 router.delete('/:id', authenticateUser, deleteChallenge);
 router.post('/:id/increment', authenticateUser, incrementParticipants);
 

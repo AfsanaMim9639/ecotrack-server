@@ -11,12 +11,20 @@ const challengeSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Description is required'],
     trim: true,
-    maxlength: [500, 'Description cannot exceed 500 characters']
+    maxlength: [1000, 'Description cannot exceed 1000 characters']
   },
   category: {
     type: String,
     required: [true, 'Category is required'],
-    enum: ['Energy', 'Water', 'Waste', 'Transportation', 'Food', 'Other'],
+    enum: [
+      'Energy Conservation',
+      'Water Conservation',
+      'Waste Reduction',
+      'Sustainable Transport',
+      'Green Living',
+      'Food & Agriculture',
+      'Other'
+    ],
     default: 'Other'
   },
   duration: {
@@ -24,42 +32,39 @@ const challengeSchema = new mongoose.Schema({
     required: [true, 'Duration is required'],
     min: [1, 'Duration must be at least 1 day']
   },
-  difficulty: {
+  target: {
     type: String,
-    required: [true, 'Difficulty level is required'],
-    enum: ['Easy', 'Medium', 'Hard'],
-    default: 'Easy'
-  },
-  points: {
-    type: Number,
-    required: [true, 'Points are required'],
-    min: [0, 'Points cannot be negative'],
-    default: 10
+    required: [true, 'Target is required'],
+    trim: true,
+    maxlength: [200, 'Target cannot exceed 200 characters']
   },
   participants: {
     type: Number,
     default: 0,
     min: [0, 'Participants cannot be negative']
   },
+  impactMetric: {
+    type: String,
+    trim: true,
+    default: 'impact units'
+  },
   imageUrl: {
     type: String,
-    default: 'https://via.placeholder.com/400x300?text=Challenge'
+    default: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400'
   },
   createdBy: {
     type: String,
-    default: 'Admin'
-  },
-  status: {
-    type: String,
-    enum: ['Active', 'Completed', 'Upcoming'],
-    default: 'Active'
+    required: true,
+    default: 'admin@ecotrack.com'
   },
   startDate: {
     type: Date,
+    required: [true, 'Start date is required'],
     default: Date.now
   },
   endDate: {
-    type: Date
+    type: Date,
+    required: [true, 'End date is required']
   }
 }, {
   timestamps: true

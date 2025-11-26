@@ -3,19 +3,25 @@ import Challenge from '../models/Challenge.js';
 // Get all challenges with filtering and pagination
 export const getAllChallenges = async (req, res) => {
   try {
-    const { category, difficulty, status, page = 1, limit = 10 } = req.query;
+    const { category, search, page = 1, limit = 10 } = req.query;
     
     // Build filter object
     const filter = {};
-    if (category) filter.category = category;
-    if (difficulty) filter.difficulty = difficulty;
-    if (status) filter.status = status;
+    if (category && category !== 'All') filter.category = category;
+    
+    // Search in title and description
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
 
     // Pagination
     const skip = (page - 1) * limit;
 
     const challenges = await Challenge.find(filter)
-      .sort({ createdAt: -1 })
+      .sort({ startDate: -1, createdAt: -1 })
       .limit(parseInt(limit))
       .skip(skip);
 
@@ -80,12 +86,25 @@ export const createChallenge = async (req, res) => {
   }
 };
 
-// Update challenge
+// Update challenge (PATCH)
 export const updateChallenge = async (req, res) => {
   try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    // Validate end date if provided
+    if (updates.endDate && updates.startDate) {
+      if (new Date(updates.endDate) <= new Date(updates.startDate)) {
+        return res.status(400).json({
+          success: false,
+          message: 'End date must be after start date'
+        });
+      }
+    }
+
     const challenge = await Challenge.findByIdAndUpdate(
-      req.params.id,
-      req.body,
+      id,
+      updates,
       { new: true, runValidators: true }
     );
 
