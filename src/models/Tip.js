@@ -1,72 +1,40 @@
-import mongoose from 'mongoose';
-
 const tipSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Tip title is required'],
-    trim: true,
-    maxlength: [100, 'Title cannot exceed 100 characters']
-  },
-  description: {
-    type: String,
-    required: [true, 'Tip description is required'],
-    trim: true,
-    maxlength: [500, 'Description cannot exceed 500 characters']
+    required: [true, 'Title is required'],
+    trim: true
   },
   content: {
     type: String,
-    trim: true,
-    maxlength: [500, 'Content cannot exceed 500 characters']
+    required: [true, 'Content is required']
   },
   category: {
     type: String,
     required: [true, 'Category is required'],
-    enum: ['Energy', 'Water', 'Waste', 'Transportation', 'Food', 'General', 'Other'],
-    default: 'Other'
-  },
-  icon: {
-    type: String,
-    default: '💡'
-  },
-  impactLevel: {
-    type: String,
-    enum: ['Low', 'Medium', 'High'],
-    default: 'Medium'
+    enum: ['Waste Management', 'Energy', 'Water', 'Transportation', 'Food', 'Other']
   },
   author: {
     type: String,
-    default: 'EcoTrack Team'
+    required: [true, 'Author email is required']
   },
-  likes: {
-    type: Number,
-    default: 0,
-    min: 0
+  authorName: {
+    type: String,
+    required: [true, 'Author name is required']
   },
-  views: {
-    type: Number,
-    default: 0,
-    min: 0
-  },
-  featured: {
-    type: Boolean,
-    default: false
-  },
-  order: {
+  upvotes: {
     type: Number,
     default: 0
   },
-  tags: [{
-    type: String,
-    trim: true
-  }]
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 }, {
-  timestamps: true
+  timestamps: false
 });
 
-// Index for better search performance
-tipSchema.index({ category: 1, featured: -1 });
-tipSchema.index({ createdAt: -1 });
+tipSchema.index({ category: 1 });
+tipSchema.index({ upvotes: -1 });
 
-const Tip = mongoose.model('Tip', tipSchema);
+export default mongoose.model('Tip', tipSchema);
 
-export default Tip;

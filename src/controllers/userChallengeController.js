@@ -1,10 +1,10 @@
 import UserChallenge from '../models/UserChallenge.js';
 import Challenge from '../models/Challenge.js';
 
-// Join a challenge (NO AUTH VERSION for testing)
+// Join a challenge
 export const joinChallenge = async (req, res) => {
   try {
-    const { userId, userEmail, userName, challengeId } = req.body;
+    const { userId, challengeId } = req.body;
 
     // Check if challenge exists
     const challenge = await Challenge.findById(challengeId);
@@ -24,17 +24,13 @@ export const joinChallenge = async (req, res) => {
       });
     }
 
-    // Create user challenge
+    // Create user challenge - using requirements format
     const userChallenge = await UserChallenge.create({
       userId,
-      userEmail,
-      userName: userName || userEmail.split('@')[0],
       challengeId,
-      challengeTitle: challenge.title,
-      challengeCategory: challenge.category,
-      challengePoints: challenge.points,
-      pointsEarned: 0,
-      status: 'Active'
+      status: 'Not Started',
+      progress: 0,
+      joinDate: new Date()
     });
 
     // Increment challenge participants
@@ -63,73 +59,18 @@ export const getUserChallenges = async (req, res) => {
 
     const filter = { userId };
     if (status) {
-      // Handle both lowercase and capitalized status
+      // Case-insensitive status match
       filter.status = new RegExp(`^${status}$`, 'i');
     }
 
     const userChallenges = await UserChallenge.find(filter)
       .populate('challengeId')
-      .sort({ joinedDate: -1 });
+      .sort({ joinDate: -1 });
 
     res.status(200).json({
       success: true,
       count: userChallenges.length,
       data: userChallenges
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
-// Get user statistics
-export const getUserStats = async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    const stats = await UserChallenge.aggregate([
-      { $match: { userId } },
-      {
-        $group: {
-          _id: null,
-          totalChallenges: { $sum: 1 },
-          activeChallenges: {
-            $sum: { 
-              $cond: [
-                { $regexMatch: { input: '$status', regex: /^active$/i } }, 
-                1, 
-                0
-              ] 
-            }
-          },
-          completedChallenges: {
-            $sum: { 
-              $cond: [
-                { $regexMatch: { input: '$status', regex: /^completed$/i } }, 
-                1, 
-                0
-              ] 
-            }
-          },
-          totalPoints: { $sum: '$pointsEarned' },
-          averageProgress: { $avg: '$progressPercentage' }
-        }
-      }
-    ]);
-
-    const result = stats[0] || {
-      totalChallenges: 0,
-      activeChallenges: 0,
-      completedChallenges: 0,
-      totalPoints: 0,
-      averageProgress: 0
-    };
-
-    res.status(200).json({
-      success: true,
-      data: result
     });
   } catch (error) {
     res.status(500).json({
@@ -166,11 +107,11 @@ export const getUserChallengeById = async (req, res) => {
   }
 };
 
-// Update progress percentage
+// Update progress
 export const updateProgress = async (req, res) => {
   try {
     const { id } = req.params;
-    const { progressPercentage } = req.body;
+    const { progress } = req.body;
 
     const userChallenge = await UserChallenge.findById(id);
 
@@ -181,15 +122,16 @@ export const updateProgress = async (req, res) => {
       });
     }
 
-    // Update progress
-    userChallenge.progressPercentage = Math.min(100, Math.max(0, progressPercentage));
-    userChallenge.lastUpdated = new Date();
+    // Update progress (0-100)
+    userChallenge.progress = Math.min(100, Math.max(0, progress));
 
-    // Check if completed
-    if (userChallenge.progressPercentage === 100 && userChallenge.status.toLowerCase() === 'active') {
-      userChallenge.status = 'Completed';
-      userChallenge.completedDate = new Date();
-      userChallenge.pointsEarned = userChallenge.challengePoints;
+    // Update status based on progress
+    if (userChallenge.progress === 0) {
+      userChallenge.status = 'Not Started';
+    } else if (userChallenge.progress === 100) {
+      userChallenge.status = 'Finished';
+    } else {
+      userChallenge.status = 'Ongoing';
     }
 
     await userChallenge.save();
@@ -207,40 +149,45 @@ export const updateProgress = async (req, res) => {
   }
 };
 
-// Add progress update (with description)
-export const addProgressUpdate = async (req, res) => {
+// Get user statistics
+export const getUserStats = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { description, proofImage } = req.body;
+    const { userId } = req.params;
 
-    const userChallenge = await UserChallenge.findById(id);
+    const stats = await UserChallenge.aggregate([
+      { $match: { userId } },
+      {
+        $group: {
+          _id: null,
+          totalChallenges: { $sum: 1 },
+          ongoingChallenges: {
+            $sum: { 
+              $cond: [{ $eq: ['$status', 'Ongoing'] }, 1, 0] 
+            }
+          },
+          finishedChallenges: {
+            $sum: { 
+              $cond: [{ $eq: ['$status', 'Finished'] }, 1, 0] 
+            }
+          },
+          averageProgress: { $avg: '$progress' }
+        }
+      }
+    ]);
 
-    if (!userChallenge) {
-      return res.status(404).json({
-        success: false,
-        message: 'User challenge not found'
-      });
-    }
-
-    // Add progress update
-    userChallenge.progressUpdates.push({
-      date: new Date(),
-      description,
-      proofImage
-    });
-
-    userChallenge.totalUpdates = userChallenge.progressUpdates.length;
-    userChallenge.lastUpdated = new Date();
-
-    await userChallenge.save();
+    const result = stats[0] || {
+      totalChallenges: 0,
+      ongoingChallenges: 0,
+      finishedChallenges: 0,
+      averageProgress: 0
+    };
 
     res.status(200).json({
       success: true,
-      data: userChallenge,
-      message: 'Progress update added successfully'
+      data: result
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       message: error.message
     });
@@ -252,14 +199,7 @@ export const abandonChallenge = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const userChallenge = await UserChallenge.findByIdAndUpdate(
-      id,
-      { 
-        status: 'Abandoned',
-        lastUpdated: new Date()
-      },
-      { new: true }
-    );
+    const userChallenge = await UserChallenge.findByIdAndDelete(id);
 
     if (!userChallenge) {
       return res.status(404).json({
@@ -268,9 +208,13 @@ export const abandonChallenge = async (req, res) => {
       });
     }
 
+    // Decrement challenge participants
+    await Challenge.findByIdAndUpdate(userChallenge.challengeId, {
+      $inc: { participants: -1 }
+    });
+
     res.status(200).json({
       success: true,
-      data: userChallenge,
       message: 'Challenge abandoned'
     });
   } catch (error) {
@@ -279,4 +223,9 @@ export const abandonChallenge = async (req, res) => {
       message: error.message
     });
   }
+};
+
+// Placeholder functions for other routes
+export const addProgressUpdate = async (req, res) => {
+  res.status(501).json({ success: false, message: 'Not implemented yet' });
 };
