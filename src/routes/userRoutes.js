@@ -1,20 +1,18 @@
-// routes/userRoutes.js
 import express from 'express';
 import {
   getOrCreateProfile,
   getUserProfile,
-  updateUserProfile
+  getUserBadges
 } from '../controllers/userController.js';
+import { authenticateUser } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get or create user profile
+// All routes require authentication
+router.use(authenticateUser);
+
 router.post('/profile', getOrCreateProfile);
-
-// Get user profile
-router.get('/profile/:userId', getUserProfile);
-
-// Update user profile
-router.put('/profile/:userId', updateUserProfile);
+router.get('/profile', getUserProfile);
+router.get('/badges', getUserBadges);
 
 export default router;
