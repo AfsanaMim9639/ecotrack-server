@@ -63,11 +63,16 @@ export const getUserChallenges = async (req, res) => {
     const { status } = req.query;
 
     const filter = { userId };
-    if (status) filter.status = status;
+    
+    // Handle comma-separated status values (e.g., "Not Started,Ongoing")
+    if (status) {
+      const statusArray = status.split(',').map(s => s.trim());
+      filter.status = { $in: statusArray };
+    }
 
     const userChallenges = await UserChallenge.find(filter)
       .populate('challengeId')
-      .sort({ joinedDate: -1 });
+      .sort({ joinDate: -1 });
 
     res.status(200).json({
       success: true,
