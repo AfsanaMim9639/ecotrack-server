@@ -1,5 +1,6 @@
 import UserChallenge from '../models/UserChallenge.js';
 import Challenge from '../models/Challenge.js';
+import { updateUserStats, incrementChallengesJoined } from './userController.js';
 
 // Join a challenge
 export const joinChallenge = async (req, res) => {
@@ -38,6 +39,9 @@ export const joinChallenge = async (req, res) => {
     await Challenge.findByIdAndUpdate(challengeId, {
       $inc: { participants: 1 }
     });
+
+    // Update user stats (challenges joined)
+    await incrementChallengesJoined(userId);
 
     res.status(201).json({
       success: true,
@@ -141,6 +145,9 @@ export const updateProgress = async (req, res) => {
       // Award points
       const challenge = await Challenge.findById(userChallenge.challengeId);
       userChallenge.pointsEarned = challenge.points;
+      
+      // Update user stats (points and completion count)
+      await updateUserStats(userId, challenge.points);
     }
 
     await userChallenge.save();

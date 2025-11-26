@@ -4,12 +4,14 @@ import dotenv from 'dotenv';
 import connectDB from './config/database.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
-// Import routes
+// Import ALL routes
 import challengeRoutes from './routes/challengeRoutes.js';
 import userChallengeRoutes from './routes/userChallengeRoutes.js';
 import tipsRoutes from './routes/tipsRoutes.js';
 import eventsRoutes from './routes/eventsRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
+import leaderboardRoutes from './routes/leaderboardRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -63,7 +65,9 @@ app.get('/', (req, res) => {
       userChallenges: '/api/user-challenges',
       tips: '/api/tips',
       events: '/api/events',
-      stats: '/api/stats'
+      stats: '/api/stats',
+      leaderboard: '/api/leaderboard',
+      users: '/api/users'
     }
   });
 });
@@ -74,11 +78,14 @@ app.use('/api/*', async (req, res, next) => {
   next();
 });
 
+// Register ALL routes
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/user-challenges', userChallengeRoutes);
 app.use('/api/tips', tipsRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/users', userRoutes);
 
 // Error handling
 app.use(notFound);
