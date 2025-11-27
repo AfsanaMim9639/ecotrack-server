@@ -383,29 +383,21 @@ export const abandonChallenge = async (req, res) => {
     });
   }
 };*/
+import UserChallenge from '../models/UserChallenge.js';
+import Challenge from '../models/Challenge.js';
+import User from '../models/User.js';
+import { updateUserStats, incrementChallengesJoined } from './userController.js';
 
-// Join a challenge - SIMPLIFIED VERSION
+// Join a challenge
 export const joinChallenge = async (req, res) => {
   try {
-    const { challengeId } = req.body;
-    const userId = req.user.uid;
-    const userEmail = req.user.email;
-    const userName = req.user.displayName || req.user.name || req.user.email?.split('@')[0] || 'User';
+    const { challengeId, userId, userEmail, userName } = req.body;
 
-    console.log('Join challenge request:', {
-      userId,
-      userEmail,
-      userName,
-      challengeId,
-      fullUser: req.user
-    });
-
-    // Validate required fields
-    if (!userId || !userEmail || !challengeId) {
+    // Validate
+    if (!challengeId || !userId || !userEmail) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: userId, userEmail, challengeId',
-        received: { userId, userEmail, challengeId }
+        message: 'Challenge ID, User ID, and email are required'
       });
     }
 
@@ -418,7 +410,7 @@ export const joinChallenge = async (req, res) => {
       });
     }
 
-    // Check if user already joined
+    // Check if already joined
     const existing = await UserChallenge.findOne({ userId, challengeId });
     if (existing) {
       return res.status(400).json({
@@ -427,11 +419,21 @@ export const joinChallenge = async (req, res) => {
       });
     }
 
+    // Create or get user
+    let user = await User.findOne({ userId });
+    if (!user) {
+      user = await User.create({
+        userId,
+        email: userEmail,
+        displayName: userName || 'EcoWarrior'
+      });
+    }
+
     // Create user challenge
     const userChallenge = await UserChallenge.create({
       userId,
       userEmail,
-      userName,
+      userName: userName || 'EcoWarrior',
       challengeId,
       challengeTitle: challenge.title,
       challengeCategory: challenge.category,
@@ -439,24 +441,17 @@ export const joinChallenge = async (req, res) => {
       status: 'active',
       progress: [],
       progressPercentage: 0,
-      progressUpdates: [],
-      totalUpdates: 0,
       joinedDate: new Date(),
-      startDate: new Date(),
-      daysActive: 0,
-      pointsEarned: 0,
-      lastUpdated: new Date()
+      startDate: new Date()
     });
 
-    // Increment challenge participants
+    // Update challenge participants
     await Challenge.findByIdAndUpdate(challengeId, {
       $inc: { participants: 1 }
     });
 
-    // Update user stats (challenges joined)
+    // Update user stats
     await incrementChallengesJoined(userId);
-
-    console.log('✅ Successfully joined challenge:', userChallenge._id);
 
     res.status(201).json({
       success: true,
@@ -464,10 +459,215 @@ export const joinChallenge = async (req, res) => {
       message: 'Successfully joined challenge'
     });
   } catch (error) {
-    console.error('❌ Join challenge error:', error);
+    console.error('Join challenge error:', error);
     res.status(400).json({
       success: false,
       message: error.message
     });
   }
 };
+
+// Get user's challenges
+export const getUserChallenges = async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    const { status } = req.query;
+    const filter = { userId };
+    
+    if (status) {
+      const statusArray = status.split(',').map(s => s.trim());
+      filter.status = { $in: statusArray };
+    }
+
+    const userChallenges = await UserChallenge.find(filter)
+      .populate('challengeId')
+      .sort({ joinedDate: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: userChallenges.length,
+      data: userChallenges
+    });
+  } catch (error) {
+    console.error('Get user challenges error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Get single user challenge
+export const getUserChallengeById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    const userChallenge = await UserChallenge.findOne({
+      _id: id,
+      userId
+    }).populate('challengeId');
+
+    if (!userChallenge) {
+      return res.status(404).json({
+        success: false,
+        message: 'User challenge not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: userChallenge
+    });
+  } catch (error) {
+    console.error('Get user challenge error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Update progress
+export const updateProgress = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, progressPercentage, description, proofImage, progressStatus } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    const userChallenge = await UserChallenge.findOne({ _id: id, userId });
+
+    if (!userChallenge) {
+      return res.status(404).json({
+        success: false,
+        message: 'User challenge not found'
+      });
+    }
+
+    // Add progress update
+    if (description) {
+      userChallenge.progressUpdates.push({
+        date: new Date(),
+        description,
+        proofImage: proofImage || undefined
+      });
+      userChallenge.totalUpdates += 1;
+    }
+
+    // Update progress
+    if (progressStatus) {
+      userChallenge.progress.push({
+        date: new Date(),
+        status: progressStatus,
+        description: description || ''
+      });
+      
+      if (userChallenge.updateProgressPercentage) {
+        userChallenge.updateProgressPercentage();
+      }
+    } else if (progressPercentage !== undefined) {
+      userChallenge.progressPercentage = Math.min(100, Math.max(0, progressPercentage));
+    }
+
+    // Update status based on progress
+    if (userChallenge.progressPercentage === 100) {
+      userChallenge.status = 'completed';
+      userChallenge.completedDate = new Date();
+      
+      const challenge = await Challenge.findById(userChallenge.challengeId);
+      if (challenge) {
+        const points = Math.ceil(challenge.duration / 5) * 10;
+        userChallenge.pointsEarned = points;
+        await updateUserStats(userId, points);
+      }
+    } else if (userChallenge.progressPercentage > 0) {
+      userChallenge.status = 'active';
+    }
+
+    // Calculate days active
+    const startDate = new Date(userChallenge.startDate);
+    const currentDate = new Date();
+    userChallenge.daysActive = Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24));
+    
+    userChallenge.lastUpdated = new Date();
+    await userChallenge.save();
+
+    res.status(200).json({
+      success: true,
+      data: userChallenge,
+      message: 'Progress updated successfully'
+    });
+  } catch (error) {
+    console.error('Update progress error:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Abandon challenge
+export const abandonChallenge = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required'
+      });
+    }
+
+    const userChallenge = await UserChallenge.findOne({ _id: id, userId });
+
+    if (!userChallenge) {
+      return res.status(404).json({
+        success: false,
+        message: 'User challenge not found'
+      });
+    }
+
+    userChallenge.status = 'abandoned';
+    userChallenge.lastUpdated = new Date();
+    await userChallenge.save();
+
+    // Decrement participants
+    await Challenge.findByIdAndUpdate(userChallenge.challengeId, {
+      $inc: { participants: -1 }
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Challenge abandoned successfully'
+    });
+  } catch (error) {
+    console.error('Abandon challenge error:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
