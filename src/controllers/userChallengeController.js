@@ -3,37 +3,75 @@ import Challenge from '../models/Challenge.js';
 
 // Join a challenge (NO AUTH - Direct from request body)
 export const joinChallenge = async (req, res) => {
+  console.log('========================================');
+  console.log('JOIN CHALLENGE CALLED');
+  console.log('Request Method:', req.method);
+  console.log('Request URL:', req.url);
+  console.log('Request Body:', JSON.stringify(req.body, null, 2));
+  console.log('Request Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('========================================');
+
   try {
     const { userId, userEmail, userName, challengeId } = req.body;
 
+    console.log('Extracted Values:');
+    console.log('  userId:', userId);
+    console.log('  userEmail:', userEmail);
+    console.log('  userName:', userName);
+    console.log('  challengeId:', challengeId);
+
     // Validate required fields
     if (!userId || !userEmail || !challengeId) {
+      console.log('❌ VALIDATION FAILED');
+      console.log('  userId exists?', !!userId);
+      console.log('  userEmail exists?', !!userEmail);
+      console.log('  challengeId exists?', !!challengeId);
+      
       return res.status(400).json({
         success: false,
-        message: 'Missing required fields: userId, userEmail, challengeId'
+        message: 'Missing required fields: userId, userEmail, challengeId',
+        received: {
+          userId: !!userId,
+          userEmail: !!userEmail,
+          challengeId: !!challengeId,
+          body: req.body
+        }
       });
     }
 
+    console.log('✅ Validation passed');
+
     // Check if challenge exists
+    console.log('Checking if challenge exists...');
     const challenge = await Challenge.findById(challengeId);
+    
     if (!challenge) {
+      console.log('❌ Challenge not found:', challengeId);
       return res.status(404).json({
         success: false,
         message: 'Challenge not found'
       });
     }
 
+    console.log('✅ Challenge found:', challenge.title);
+
     // Check if user already joined
+    console.log('Checking if user already joined...');
     const existing = await UserChallenge.findOne({ userId, challengeId });
+    
     if (existing) {
+      console.log('❌ User already joined this challenge');
       return res.status(400).json({
         success: false,
         message: 'You have already joined this challenge'
       });
     }
 
+    console.log('✅ User has not joined yet');
+
     // Create user challenge with all required fields
-    const userChallenge = await UserChallenge.create({
+    console.log('Creating user challenge...');
+    const userChallengeData = {
       userId,
       userEmail,
       userName: userName || userEmail.split('@')[0],
@@ -46,12 +84,24 @@ export const joinChallenge = async (req, res) => {
       progressPercentage: 0,
       totalUpdates: 0,
       daysActive: 0
-    });
+    };
+
+    console.log('User Challenge Data:', JSON.stringify(userChallengeData, null, 2));
+
+    const userChallenge = await UserChallenge.create(userChallengeData);
+
+    console.log('✅ User challenge created:', userChallenge._id);
 
     // Increment challenge participants
+    console.log('Incrementing challenge participants...');
     await Challenge.findByIdAndUpdate(challengeId, {
       $inc: { participants: 1 }
     });
+
+    console.log('✅ Challenge participants incremented');
+    console.log('========================================');
+    console.log('SUCCESS - Returning response');
+    console.log('========================================');
 
     res.status(201).json({
       success: true,
@@ -59,10 +109,20 @@ export const joinChallenge = async (req, res) => {
       message: 'Successfully joined challenge'
     });
   } catch (error) {
-    console.error('Join Challenge Error:', error);
+    console.error('========================================');
+    console.error('❌❌❌ JOIN CHALLENGE ERROR ❌❌❌');
+    console.error('Error Name:', error.name);
+    console.error('Error Message:', error.message);
+    console.error('Error Stack:', error.stack);
+    console.error('========================================');
+    
     res.status(400).json({
       success: false,
-      message: error.message || 'Failed to join challenge'
+      message: error.message || 'Failed to join challenge',
+      error: {
+        name: error.name,
+        message: error.message
+      }
     });
   }
 };
@@ -82,7 +142,6 @@ export const getUserChallenges = async (req, res) => {
 
     const filter = { userId };
     if (status) {
-      // Handle both lowercase and capitalized status
       filter.status = new RegExp(`^${status}$`, 'i');
     }
 
@@ -217,11 +276,9 @@ export const updateProgress = async (req, res) => {
       });
     }
 
-    // Update progress
     userChallenge.progressPercentage = Math.min(100, Math.max(0, progressPercentage));
     userChallenge.lastUpdated = new Date();
 
-    // Check if completed
     if (userChallenge.progressPercentage === 100 && userChallenge.status.toLowerCase() === 'active') {
       userChallenge.status = 'Completed';
       userChallenge.completedDate = new Date();
@@ -266,7 +323,6 @@ export const addProgressUpdate = async (req, res) => {
       });
     }
 
-    // Add progress update
     userChallenge.progressUpdates.push({
       date: new Date(),
       description,
