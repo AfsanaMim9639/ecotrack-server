@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const progressSchema = new mongoose.Schema({
+const progressEntrySchema = new mongoose.Schema({
   date: {
     type: Date,
     default: Date.now
@@ -10,13 +10,24 @@ const progressSchema = new mongoose.Schema({
     enum: ['completed', 'in-progress', 'missed'],
     default: 'in-progress'
   },
-  note: {
+  description: {
     type: String,
     maxlength: 200
+  }
+}, { _id: false });
+
+const progressUpdateSchema = new mongoose.Schema({
+  date: {
+    type: Date,
+    default: Date.now
   },
   description: {
     type: String,
+    required: true,
     maxlength: 500
+  },
+  proofImage: {
+    type: String
   }
 }, { _id: false });
 
@@ -31,7 +42,8 @@ const userChallengeSchema = new mongoose.Schema({
     required: [true, 'User email is required']
   },
   userName: {
-    type: String
+    type: String,
+    default: 'User'
   },
   challengeId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -39,27 +51,34 @@ const userChallengeSchema = new mongoose.Schema({
     required: [true, 'Challenge ID is required'],
     index: true
   },
-  // Challenge info snapshot (for quick access)
   challengeTitle: {
-    type: String
+    type: String,
+    required: true
   },
   challengeCategory: {
-    type: String
+    type: String,
+    required: true
   },
   challengePoints: {
-    type: Number
+    type: Number,
+    default: 100
   },
   status: {
     type: String,
-    enum: ['active', 'completed', 'abandoned', 'Active', 'Completed', 'Abandoned'],
+    enum: ['active', 'completed', 'abandoned'],
     default: 'active'
   },
-  progress: [progressSchema],
+  progress: [progressEntrySchema],
   progressPercentage: {
     type: Number,
     default: 0,
     min: 0,
     max: 100
+  },
+  progressUpdates: [progressUpdateSchema],
+  totalUpdates: {
+    type: Number,
+    default: 0
   },
   joinedDate: {
     type: Date,
@@ -72,33 +91,18 @@ const userChallengeSchema = new mongoose.Schema({
   completedDate: {
     type: Date
   },
-  lastUpdated: {
-    type: Date,
-    default: Date.now
+  daysActive: {
+    type: Number,
+    default: 0
   },
   pointsEarned: {
     type: Number,
     default: 0
   },
-  totalUpdates: {
-    type: Number,
-    default: 0
-  },
-  daysActive: {
-    type: Number,
-    default: 0
-  },
-  progressUpdates: [{
-    date: {
-      type: Date,
-      default: Date.now
-    },
-    description: {
-      type: String,
-      required: true
-    },
-    proofImage: String
-  }]
+  lastUpdated: {
+    type: Date,
+    default: Date.now
+  }
 }, {
   timestamps: true
 });

@@ -4,34 +4,19 @@ import {
   getUserChallenges,
   getUserChallengeById,
   updateProgress,
-  addProgressUpdate,
-  getUserStats,
   abandonChallenge
 } from '../controllers/userChallengeController.js';
+import { authenticateUser } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// ALL ROUTES ARE PUBLIC (No authentication required for testing)
+// All routes require authentication
+router.use(authenticateUser);
 
-// Join a challenge
 router.post('/join', joinChallenge);
-
-// Get all challenges for a user
-router.get('/user/:userId', getUserChallenges);
-
-// Get user statistics
-router.get('/user/:userId/stats', getUserStats);
-
-// Get single user challenge
+router.get('/', getUserChallenges);
 router.get('/:id', getUserChallengeById);
-
-// Update progress percentage
-router.put('/:id/progress', updateProgress);
-
-// Add progress update
-router.post('/:id/updates', addProgressUpdate);
-
-// Abandon challenge
+router.post('/:id/progress', updateProgress);
 router.put('/:id/abandon', abandonChallenge);
 
 export default router;

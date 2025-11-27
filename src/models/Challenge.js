@@ -32,9 +32,20 @@ const challengeSchema = new mongoose.Schema({
     required: [true, 'Duration is required'],
     min: [1, 'Duration must be at least 1 day']
   },
+  difficulty: {
+    type: String,
+    required: [true, 'Difficulty level is required'],
+    enum: ['Easy', 'Medium', 'Hard'],
+    default: 'Easy'
+  },
+  points: {
+    type: Number,
+    required: [true, 'Points are required'],
+    min: [0, 'Points cannot be negative'],
+    default: 100
+  },
   target: {
     type: String,
-    required: [true, 'Target is required'],
     trim: true,
     maxlength: [200, 'Target cannot exceed 200 characters']
   },
@@ -57,14 +68,17 @@ const challengeSchema = new mongoose.Schema({
     required: true,
     default: 'admin@ecotrack.com'
   },
+  status: {
+    type: String,
+    enum: ['Active', 'Completed', 'Upcoming'],
+    default: 'Active'
+  },
   startDate: {
     type: Date,
-    required: [true, 'Start date is required'],
     default: Date.now
   },
   endDate: {
-    type: Date,
-    required: [true, 'End date is required']
+    type: Date
   }
 }, {
   timestamps: true
@@ -73,14 +87,6 @@ const challengeSchema = new mongoose.Schema({
 // Add index for faster queries
 challengeSchema.index({ category: 1, status: 1 });
 challengeSchema.index({ createdAt: -1 });
-
-// Virtual for calculating if challenge is expired
-challengeSchema.virtual('isExpired').get(function() {
-  if (this.endDate) {
-    return new Date() > this.endDate;
-  }
-  return false;
-});
 
 const Challenge = mongoose.model('Challenge', challengeSchema);
 
