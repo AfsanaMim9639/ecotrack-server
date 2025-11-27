@@ -1,5 +1,26 @@
 import mongoose from 'mongoose';
 
+const badgeSchema = new mongoose.Schema({
+  badgeId: {
+    type: String,
+    required: true
+  },
+  name: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String
+  },
+  icon: {
+    type: String
+  },
+  earnedAt: {
+    type: Date,
+    default: Date.now
+  }
+}, { _id: false });
+
 const userSchema = new mongoose.Schema({
   userId: {
     type: String,
@@ -44,9 +65,7 @@ const userSchema = new mongoose.Schema({
     enum: ['Beginner', 'Explorer', 'Champion', 'Legend', 'Master'],
     default: 'Beginner'
   },
-  badges: [{
-    type: String
-  }],
+  badges: [badgeSchema],  // ✅ Changed to badgeSchema
   lastActive: {
     type: Date,
     default: Date.now
@@ -55,7 +74,7 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for leaderboard queries
+// Indexes
 userSchema.index({ totalPoints: -1 });
 userSchema.index({ totalChallengesCompleted: -1 });
 userSchema.index({ currentStreak: -1 });
