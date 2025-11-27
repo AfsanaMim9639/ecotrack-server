@@ -3,16 +3,25 @@ import Event from '../models/Event.js';
 // Get all events
 export const getAllEvents = async (req, res) => {
   try {
-    const { category, status, limit = 20 } = req.query;
+    const { category, status, limit } = req.query;
     
     const filter = {};
-    if (category) filter.category = category;
-    if (status) filter.status = status;
-
+    
+    if (category && category !== 'all') {
+      filter.category = category;
+    }
+    
+    if (status) {
+      filter.status = status;
+    } else {
+      // Default: show only upcoming and ongoing events
+      filter.status = { $in: ['Upcoming', 'Ongoing'] };
+    }
+    
     const events = await Event.find(filter)
-      .sort({ eventDate: 1 })
-      .limit(parseInt(limit));
-
+      .sort({ featured: -1, eventDate: 1 })
+      .limit(parseInt(limit) || 10);
+    
     res.status(200).json({
       success: true,
       count: events.length,
@@ -26,18 +35,18 @@ export const getAllEvents = async (req, res) => {
   }
 };
 
-// Get upcoming events (NEW ENDPOINT for frontend)
+// Get upcoming events (special route for Home page)
 export const getUpcomingEvents = async (req, res) => {
   try {
-    const { limit = 6 } = req.query;
+    const { limit } = req.query;
     
     const events = await Event.find({
       status: 'Upcoming',
-      eventDate: { $gte: new Date() }
+      eventDate: { $gte: new Date() }  // Future events only
     })
-      .sort({ eventDate: 1 })
-      .limit(parseInt(limit));
-
+      .sort({ featured: -1, eventDate: 1 })
+      .limit(parseInt(limit) || 10);
+    
     res.status(200).json({
       success: true,
       count: events.length,
@@ -62,7 +71,7 @@ export const getEventById = async (req, res) => {
         message: 'Event not found'
       });
     }
-
+    
     res.status(200).json({
       success: true,
       data: event
@@ -75,71 +84,17 @@ export const getEventById = async (req, res) => {
   }
 };
 
-// Create event
+// Create event (optional - for admin)
 export const createEvent = async (req, res) => {
   try {
     const event = await Event.create(req.body);
-
+    
     res.status(201).json({
       success: true,
-      data: event,
-      message: 'Event created successfully'
+      data: event
     });
   } catch (error) {
     res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
-// Update event
-export const updateEvent = async (req, res) => {
-  try {
-    const event = await Event.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-
-    if (!event) {
-      return res.status(404).json({
-        success: false,
-        message: 'Event not found'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: event,
-      message: 'Event updated successfully'
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
-// Delete event
-export const deleteEvent = async (req, res) => {
-  try {
-    const event = await Event.findByIdAndDelete(req.params.id);
-
-    if (!event) {
-      return res.status(404).json({
-        success: false,
-        message: 'Event not found'
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: 'Event deleted successfully'
-    });
-  } catch (error) {
-    res.status(500).json({
       success: false,
       message: error.message
     });
@@ -157,17 +112,21 @@ export const registerForEvent = async (req, res) => {
         message: 'Event not found'
       });
     }
-
-    if (event.registeredParticipants >= event.maxParticipants) {
+    
+    // Check if event is full
+    if (event.registeredCount >= event.capacity) {
       return res.status(400).json({
         success: false,
         message: 'Event is full'
       });
     }
-
+    
+    // Increment participants
+    event.registeredCount += 1;
     event.registeredParticipants += 1;
+    event.currentParticipants += 1;
     await event.save();
-
+    
     res.status(200).json({
       success: true,
       data: event,

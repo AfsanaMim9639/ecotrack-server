@@ -4,19 +4,18 @@ import {
   getUpcomingEvents,
   getEventById,
   createEvent,
-  updateEvent,
-  deleteEvent,
   registerForEvent
-} from '../controllers/eventsController.js';
+} from '../controllers/eventController.js';
 
 const router = express.Router();
 
-router.get('/', getAllEvents);
-router.get('/upcoming', getUpcomingEvents); // IMPORTANT: This must be BEFORE /:id
-router.get('/:id', getEventById);
-router.post('/', createEvent);
-router.put('/:id', updateEvent);
-router.delete('/:id', deleteEvent);
-router.post('/:id/register', registerForEvent);
+// Public routes
+router.get('/', getAllEvents);                    // GET /api/events
+router.get('/upcoming', getUpcomingEvents);       // GET /api/events/upcoming?limit=6
+router.get('/:id', getEventById);                 // GET /api/events/:id
+router.post('/:id/register', registerForEvent);   // POST /api/events/:id/register
+
+// Admin route (optional - add auth later)
+router.post('/', createEvent);                    // POST /api/events
 
 export default router;
