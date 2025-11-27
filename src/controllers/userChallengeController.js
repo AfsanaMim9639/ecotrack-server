@@ -1,4 +1,5 @@
-import UserChallenge from '../models/UserChallenge.js';
+/*import UserChallenge from '../models/UserChallenge.js';
+
 import Challenge from '../models/Challenge.js';
 
 // Join a challenge (NO AUTH - Direct from request body)
@@ -377,6 +378,94 @@ export const abandonChallenge = async (req, res) => {
   } catch (error) {
     console.error('Abandon Challenge Error:', error);
     res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};*/
+
+// Join a challenge - SIMPLIFIED VERSION
+export const joinChallenge = async (req, res) => {
+  try {
+    const { challengeId } = req.body;
+    const userId = req.user.uid;
+    const userEmail = req.user.email;
+    const userName = req.user.displayName || req.user.name || req.user.email?.split('@')[0] || 'User';
+
+    console.log('Join challenge request:', {
+      userId,
+      userEmail,
+      userName,
+      challengeId,
+      fullUser: req.user
+    });
+
+    // Validate required fields
+    if (!userId || !userEmail || !challengeId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: userId, userEmail, challengeId',
+        received: { userId, userEmail, challengeId }
+      });
+    }
+
+    // Check if challenge exists
+    const challenge = await Challenge.findById(challengeId);
+    if (!challenge) {
+      return res.status(404).json({
+        success: false,
+        message: 'Challenge not found'
+      });
+    }
+
+    // Check if user already joined
+    const existing = await UserChallenge.findOne({ userId, challengeId });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already joined this challenge'
+      });
+    }
+
+    // Create user challenge
+    const userChallenge = await UserChallenge.create({
+      userId,
+      userEmail,
+      userName,
+      challengeId,
+      challengeTitle: challenge.title,
+      challengeCategory: challenge.category,
+      challengePoints: challenge.points || 100,
+      status: 'active',
+      progress: [],
+      progressPercentage: 0,
+      progressUpdates: [],
+      totalUpdates: 0,
+      joinedDate: new Date(),
+      startDate: new Date(),
+      daysActive: 0,
+      pointsEarned: 0,
+      lastUpdated: new Date()
+    });
+
+    // Increment challenge participants
+    await Challenge.findByIdAndUpdate(challengeId, {
+      $inc: { participants: 1 }
+    });
+
+    // Update user stats (challenges joined)
+    await incrementChallengesJoined(userId);
+
+    console.log('✅ Successfully joined challenge:', userChallenge._id);
+
+    res.status(201).json({
+      success: true,
+      data: userChallenge,
+      message: 'Successfully joined challenge'
+    });
+  } catch (error) {
+    console.error('❌ Join challenge error:', error);
+    res.status(400).json({
       success: false,
       message: error.message
     });
