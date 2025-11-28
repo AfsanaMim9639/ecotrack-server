@@ -5,7 +5,7 @@ import {
   getEventById,
   createEvent,
   registerForEvent
-} from '../controllers/eventController.js';
+} from '../controllers/eventsController.js';
 
 const router = express.Router();
 
