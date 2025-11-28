@@ -4,7 +4,7 @@ import {
   getTipById,
   createTip,
   likeTip
-} from '../controllers/tipController.js';
+} from '../controllers/tipsController.js';
 
 const router = express.Router();
 
