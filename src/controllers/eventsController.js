@@ -11,15 +11,13 @@ export const getAllEvents = async (req, res) => {
       filter.category = category;
     }
     
+    // Don't filter by status if not provided
     if (status) {
       filter.status = status;
-    } else {
-      // Default: show only upcoming and ongoing events
-      filter.status = { $in: ['Upcoming', 'Ongoing'] };
     }
     
     const events = await Event.find(filter)
-      .sort({ featured: -1, eventDate: 1 })
+      .sort({ featured: -1, eventDate: 1, date: 1 })  // Try both fields
       .limit(parseInt(limit) || 10);
     
     res.status(200).json({
@@ -35,17 +33,15 @@ export const getAllEvents = async (req, res) => {
   }
 };
 
-// Get upcoming events (special route for Home page)
+// Get upcoming events - SIMPLIFIED (no date/status filter)
 export const getUpcomingEvents = async (req, res) => {
   try {
     const { limit } = req.query;
     
-    const events = await Event.find({
-      status: 'Upcoming',
-      eventDate: { $gte: new Date() }  // Future events only
-    })
-      .sort({ featured: -1, eventDate: 1 })
-      .limit(parseInt(limit) || 10);
+    // Just get all events, don't filter by date or status
+    const events = await Event.find({})
+      .sort({ featured: -1, eventDate: 1, date: 1 })
+      .limit(parseInt(limit) || 6);
     
     res.status(200).json({
       success: true,
@@ -84,7 +80,7 @@ export const getEventById = async (req, res) => {
   }
 };
 
-// Create event (optional - for admin)
+// Create event
 export const createEvent = async (req, res) => {
   try {
     const event = await Event.create(req.body);
@@ -113,18 +109,22 @@ export const registerForEvent = async (req, res) => {
       });
     }
     
-    // Check if event is full
-    if (event.registeredCount >= event.capacity) {
+    // Check capacity - support both field names
+    const capacity = event.capacity || event.maxParticipants || 100;
+    const registered = event.registeredCount || event.currentParticipants || 0;
+    
+    if (registered >= capacity) {
       return res.status(400).json({
         success: false,
         message: 'Event is full'
       });
     }
     
-    // Increment participants
-    event.registeredCount += 1;
-    event.registeredParticipants += 1;
-    event.currentParticipants += 1;
+    // Increment participants - update all possible fields
+    if (event.registeredCount !== undefined) event.registeredCount += 1;
+    if (event.registeredParticipants !== undefined) event.registeredParticipants += 1;
+    if (event.currentParticipants !== undefined) event.currentParticipants += 1;
+    
     await event.save();
     
     res.status(200).json({
