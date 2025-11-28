@@ -82,8 +82,8 @@ app.use('/api/*', async (req, res, next) => {
 // Register ALL routes
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/user-challenges', userChallengeRoutes);
-app.use('/api/tips', tipRoutes);
-app.use('/api/events', eventRoutes);
+app.use('/api/tips', tipsRoutes);
+app.use('/api/events', eventsRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/users', userRoutes);
