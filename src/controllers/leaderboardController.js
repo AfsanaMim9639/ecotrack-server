@@ -55,15 +55,20 @@ export const getLeaderboard = async (req, res) => {
   }
 };
 
-// Get user's rank and position - UPDATED ✅
+// Get user's rank and position - FIXED ✅
 export const getUserRank = async (req, res) => {
   try {
     const userId = req.user.uid;
     
+    console.log('🔍 Fetching rank for userId:', userId); // Debug log
+    
     const user = await User.findOne({ userId });
     
-    // If user doesn't exist, return default data instead of 404
+    console.log('👤 User found:', user ? 'Yes' : 'No'); // Debug log
+    
+    // If user doesn't exist, return default data
     if (!user) {
+      console.log('⚠️ User not found, returning default data');
       return res.status(200).json({
         success: true,
         data: {
@@ -95,21 +100,23 @@ export const getUserRank = async (req, res) => {
       ? Math.round((1 - (position / totalUsers)) * 100)
       : 0;
     
+    console.log('✅ Rank calculated:', { position, totalUsers, percentile });
+    
     res.status(200).json({
       success: true,
       data: {
         position,
         totalUsers,
         percentile,
-        totalPoints: user.totalPoints,
-        rank: user.rank,
-        badges: user.badges,
-        currentStreak: user.currentStreak,
-        longestStreak: user.longestStreak || 0
+        totalPoints: user.totalPoints || 0,
+        rank: user.rank || 'Beginner',
+        badges: user.badges || [],
+        currentStreak: user.currentStreak || 0,
+        longestStreak: user.longestStreak || user.currentStreak || 0
       }
     });
   } catch (error) {
-    console.error('Get Rank Error:', error);
+    console.error('❌ Get Rank Error:', error);
     res.status(500).json({
       success: false,
       message: error.message
