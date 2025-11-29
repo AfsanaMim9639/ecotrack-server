@@ -6,9 +6,9 @@ import {
   updateChallenge,
   deleteChallenge,
   incrementParticipants,
-  decrementParticipants  // Add this import
+  decrementParticipants
 } from '../controllers/challengeController.js';
-import { authenticateUser, optionalAuth } from '../middleware/auth.js';
+import { authenticateUser, optionalAuth, isAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -18,9 +18,11 @@ router.get('/:id', getChallengeById);
 
 // Protected routes (require authentication)
 router.post('/', authenticateUser, createChallenge);
-router.patch('/:id', authenticateUser, updateChallenge);
-router.delete('/:id', authenticateUser, deleteChallenge);
 router.post('/:id/increment', authenticateUser, incrementParticipants);
-router.post('/:id/decrement', authenticateUser, decrementParticipants); // Add this route
+router.post('/:id/decrement', authenticateUser, decrementParticipants);
+
+// Admin-only routes
+router.patch('/:id', authenticateUser, isAdmin, updateChallenge);
+router.delete('/:id', authenticateUser, isAdmin, deleteChallenge);
 
 export default router;

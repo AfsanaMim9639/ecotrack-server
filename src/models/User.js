@@ -20,6 +20,12 @@ const userSchema = new mongoose.Schema({
   photoURL: {
     type: String
   },
+  // ✅ ADD THIS FIELD
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
   totalPoints: {
     type: Number,
     default: 0

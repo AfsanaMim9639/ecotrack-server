@@ -1,3 +1,5 @@
+import User from '../models/User.js'; // ✅ Import your User model
+
 // Auth middleware for EcoTrack
 // Extracts Firebase token and attaches user info to request
 
@@ -45,7 +47,16 @@ export const authenticateUser = async (req, res, next) => {
         });
       }
       
-      console.log('✅ Authenticated user:', req.user.uid, req.user.email);
+      // ✅ Fetch user role from MongoDB using userId field
+      const dbUser = await User.findOne({ userId: req.user.uid });
+      if (dbUser) {
+        req.user.role = dbUser.role || 'user'; // ✅ Attach role (default 'user')
+        req.user._id = dbUser._id; // ✅ Attach MongoDB _id
+      } else {
+        req.user.role = 'user'; // ✅ Default to 'user' if not found in DB
+      }
+      
+      console.log('✅ Authenticated user:', req.user.uid, req.user.email, 'Role:', req.user.role);
       next();
       
     } catch (decodeError) {
@@ -66,7 +77,7 @@ export const authenticateUser = async (req, res, next) => {
 };
 
 // Optional: Middleware to check if user is authenticated (but don't fail)
-export const optionalAuth = (req, res, next) => {
+export const optionalAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     
@@ -81,9 +92,38 @@ export const optionalAuth = (req, res, next) => {
         name: payload.name || payload.displayName,
         displayName: payload.name || payload.displayName
       };
+
+      // ✅ Fetch user role from MongoDB (optional auth)
+      const dbUser = await User.findOne({ userId: req.user.uid });
+      if (dbUser) {
+        req.user.role = dbUser.role || 'user';
+        req.user._id = dbUser._id;
+      } else {
+        req.user.role = 'user';
+      }
     }
   } catch (error) {
     // Silently fail, just continue without user
   }
+  next();
+};
+
+// ✅ NEW: Admin authorization middleware
+export const isAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required'
+    });
+  }
+
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin access required. You do not have permission to perform this action.'
+    });
+  }
+
+  console.log('✅ Admin access granted:', req.user.email);
   next();
 };
