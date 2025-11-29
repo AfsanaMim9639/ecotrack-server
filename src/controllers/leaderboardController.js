@@ -55,17 +55,28 @@ export const getLeaderboard = async (req, res) => {
   }
 };
 
-// Get user's rank and position
+// Get user's rank and position - UPDATED ✅
 export const getUserRank = async (req, res) => {
   try {
     const userId = req.user.uid;
     
     const user = await User.findOne({ userId });
     
+    // If user doesn't exist, return default data instead of 404
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
+      return res.status(200).json({
+        success: true,
+        data: {
+          position: 0,
+          totalUsers: 0,
+          percentile: 100,
+          totalPoints: 0,
+          rank: 'Beginner',
+          badges: [],
+          currentStreak: 0,
+          longestStreak: 0
+        },
+        message: 'User profile not found. Complete challenges to appear on leaderboard.'
       });
     }
     
@@ -94,7 +105,7 @@ export const getUserRank = async (req, res) => {
         rank: user.rank,
         badges: user.badges,
         currentStreak: user.currentStreak,
-        longestStreak: user.longestStreak
+        longestStreak: user.longestStreak || 0
       }
     });
   } catch (error) {

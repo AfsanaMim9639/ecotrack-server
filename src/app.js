@@ -12,6 +12,7 @@ import eventsRoutes from './routes/eventsRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+
 //import leaderboardRoutes from './routes/leaderboardRoutes.js';
 
 // Load environment variables
@@ -87,6 +88,7 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/users', userRoutes);
+
 
 // Error handling
 app.use(notFound);
