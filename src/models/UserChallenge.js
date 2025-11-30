@@ -10,10 +10,21 @@ const progressEntrySchema = new mongoose.Schema({
     enum: ['completed', 'in-progress', 'missed'],
     default: 'in-progress'
   },
+  percentage: {
+    type: Number,
+    required: true,
+    min: 0,
+    max: 100
+  },
   description: {
     type: String,
     maxlength: 200
-  }
+  },
+  notes: {
+    type: String,
+    maxlength: 500
+  },
+  impactValue: Number // e.g., kg of waste reduced, kWh saved
 }, { _id: false });
 
 const progressUpdateSchema = new mongoose.Schema({
@@ -69,6 +80,7 @@ const userChallengeSchema = new mongoose.Schema({
     default: 'active'
   },
   progress: [progressEntrySchema],
+  progressHistory: [progressEntrySchema], // ✅ NEW - for tracking historical progress
   progressPercentage: {
     type: Number,
     default: 0,
@@ -102,6 +114,10 @@ const userChallengeSchema = new mongoose.Schema({
   lastUpdated: {
     type: Date,
     default: Date.now
+  },
+  totalImpact: { // ✅ NEW - aggregated impact
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true
@@ -110,6 +126,12 @@ const userChallengeSchema = new mongoose.Schema({
 // Compound index for faster queries
 userChallengeSchema.index({ userId: 1, challengeId: 1 }, { unique: true });
 userChallengeSchema.index({ status: 1, userId: 1 });
+
+// Update lastUpdated on save
+userChallengeSchema.pre('save', function(next) {
+  this.lastUpdated = Date.now();
+  next();
+});
 
 // Method to update progress percentage
 userChallengeSchema.methods.updateProgressPercentage = function() {
