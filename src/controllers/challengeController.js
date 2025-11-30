@@ -1,13 +1,29 @@
 import Challenge from '../models/Challenge.js';
 
-// Get all challenges with filtering and pagination
+// Get all challenges with advanced filtering and pagination
 export const getAllChallenges = async (req, res) => {
   try {
-    const { category, search, page = 1, limit = 10 } = req.query;
+    const {
+      category,
+      search,
+      startDate,
+      endDate,
+      minParticipants,
+      maxParticipants,
+      difficulty,
+      status,
+      page = 1,
+      limit = 10
+    } = req.query;
     
     // Build filter object
     const filter = {};
-    if (category && category !== 'All') filter.category = category;
+
+    // Category filter (supports multiple categories with $in)
+    if (category && category !== 'All') {
+      const categories = category.split(',').map(c => c.trim());
+      filter.category = { $in: categories };
+    }
     
     // Search in title and description
     if (search) {
@@ -15,6 +31,38 @@ export const getAllChallenges = async (req, res) => {
         { title: { $regex: search, $options: 'i' } },
         { description: { $regex: search, $options: 'i' } }
       ];
+    }
+
+    // Date range filter using $gte and $lte
+    if (startDate || endDate) {
+      filter.startDate = {};
+      if (startDate) {
+        filter.startDate.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        filter.startDate.$lte = new Date(endDate);
+      }
+    }
+
+    // Participants range filter using $gte and $lte
+    if (minParticipants || maxParticipants) {
+      filter.participants = {};
+      if (minParticipants) {
+        filter.participants.$gte = parseInt(minParticipants);
+      }
+      if (maxParticipants) {
+        filter.participants.$lte = parseInt(maxParticipants);
+      }
+    }
+
+    // Difficulty filter
+    if (difficulty && difficulty !== 'All') {
+      filter.difficulty = difficulty;
+    }
+
+    // Status filter
+    if (status && status !== 'All') {
+      filter.status = status;
     }
 
     // Pagination
@@ -30,6 +78,7 @@ export const getAllChallenges = async (req, res) => {
     res.status(200).json({
       success: true,
       data: challenges,
+      count: challenges.length,
       pagination: {
         total,
         page: parseInt(page),
@@ -170,8 +219,6 @@ export const createChallenge = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error creating challenge:', error);
-    
     // Handle mongoose validation errors
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(err => err.message);
