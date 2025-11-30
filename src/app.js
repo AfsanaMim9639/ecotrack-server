@@ -13,15 +13,13 @@ import statsRoutes from './routes/statsRoutes.js';
 import leaderboardRoutes from './routes/leaderboardRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 
-//import leaderboardRoutes from './routes/leaderboardRoutes.js';
-
 // Load environment variables
 dotenv.config();
 
 // Initialize Express app
 const app = express();
 
-// CORS configuration
+// ✅ FIXED: CORS configuration with PATCH method
 const corsOptions = {
   origin: [
     'https://ecotrack-71dcf.web.app',
@@ -29,7 +27,7 @@ const corsOptions = {
     'http://localhost:5173'
   ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // ✅ PATCH added
   allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 200
 };
@@ -88,7 +86,6 @@ app.use('/api/events', eventsRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/users', userRoutes);
-
 
 // Error handling
 app.use(notFound);
